@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Transfer Console</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --panel: #fff; --text: #1b1f24; --muted: #667085;
+    --border: #e3e6ea; --accent: #2f6fed; --accent-text: #fff;
+    --ok: #12805c; --ok-bg: #e6f6ef; --warn: #b54708; --warn-bg: #fef3e6;
+    --err: #c0362c; --err-bg: #fdecea; --info: #475467; --info-bg: #eef1f4;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f1216; --panel: #171b21; --text: #e6e9ee; --muted: #8b95a3;
+      --border: #2a3039; --accent: #5b8cff; --accent-text: #0b0e12;
+      --ok: #4cc79a; --ok-bg: #12291f; --warn: #f2a65a; --warn-bg: #2d1f10;
+      --err: #f07a70; --err-bg: #2e1513; --info: #b4bcc8; --info-bg: #222831;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+    font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 24px 16px 48px; }
+  header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+  h1 { font-size: 20px; margin: 0; }
+  h2 { font-size: 15px; margin: 0 0 14px; }
+  h3 { font-size: 13px; margin: 16px 0 8px; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; }
+  a { color: var(--accent); }
+  .muted { color: var(--muted); }
+  .grid { display: grid; grid-template-columns: 1fr 360px 1fr; gap: 16px; align-items: start; }
+  @media (max-width: 1000px) { .grid { grid-template-columns: 1fr; } }
+  .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 18px; }
+  .stack > * + * { margin-top: 16px; }
+  label { display: block; font-weight: 500; margin-bottom: 4px; }
+  .field + .field { margin-top: 12px; }
+  input, select { width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px;
+    background: var(--bg); color: var(--text); font: inherit; }
+  input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+  button { font: inherit; font-weight: 500; padding: 8px 14px; border-radius: 6px; cursor: pointer;
+    border: 1px solid var(--border); background: var(--panel); color: var(--text); }
+  button.primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent); width: 100%; margin-top: 16px; }
+  button:disabled { opacity: .55; cursor: default; }
+  button.small { padding: 4px 10px; font-size: 13px; }
+  .user-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .role { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+  .balance { font-size: 28px; font-weight: 650; font-variant-numeric: tabular-nums; margin: 10px 0 2px; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+  .ok { color: var(--ok); background: var(--ok-bg); }
+  .warn { color: var(--warn); background: var(--warn-bg); }
+  .err { color: var(--err); background: var(--err-bg); }
+  .info { color: var(--info); background: var(--info-bg); }
+  .tx { border-top: 1px solid var(--border); padding: 10px 0; cursor: pointer; }
+  .tx:first-child { border-top: 0; }
+  .tx:hover { background: var(--bg); }
+  .tx.selected { outline: 2px solid var(--accent); outline-offset: -2px; border-radius: 6px; }
+  .tx-line { display: flex; justify-content: space-between; gap: 8px; align-items: center; padding: 0 6px; }
+  .tx-amt { font-variant-numeric: tabular-nums; font-weight: 600; }
+  .tx-sub { font-size: 12px; color: var(--muted); padding: 2px 6px 0; }
+  .tx-reason { font-size: 12px; color: var(--err); padding: 2px 6px 0; }
+  .empty { padding: 20px 8px; text-align: center; color: var(--muted); }
+  .result { margin-top: 16px; }
+  .result-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .steps { list-style: none; margin: 0; padding: 0; }
+  .steps li { display: grid; grid-template-columns: 22px 1fr; gap: 8px; padding: 6px 0; }
+  .dot { width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; font-size: 11px; font-weight: 700; margin-top: 1px; }
+  .steps .name { font-family: var(--mono); font-size: 12px; font-weight: 600; }
+  .steps .msg { font-size: 12px; color: var(--muted); }
+  .steps li.SKIPPED .name { color: var(--muted); }
+  .callout { padding: 10px 12px; border-radius: 8px; font-size: 13px; margin-bottom: 10px; }
+  .mono { font-family: var(--mono); font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Transfer Console</h1>
+    <span class="muted"><a href="index.html">Payments console</a> · API: <code class="mono" id="apiBase"></code></span>
+  </header>
+
+  <div class="grid">
+    <section class="panel" id="senderPanel">
+      <div class="user-head">
+        <span class="role">User 1 · sender</span>
+        <span id="senderStatus"></span>
+      </div>
+      <div class="field" style="margin-top:10px">
+        <select id="sender" aria-label="Sender"></select>
+      </div>
+      <div class="balance" id="senderBalance">—</div>
+      <div class="muted" id="senderId"></div>
+      <h3>Activity</h3>
+      <div id="senderTx"></div>
+    </section>
+
+    <div class="stack">
+      <form class="panel" id="sendForm" novalidate>
+        <h2>Send money</h2>
+        <div class="field">
+          <label for="amount">Amount</label>
+          <input id="amount" type="number" step="0.01" min="0.01" value="25.00">
+        </div>
+        <div class="field">
+          <label for="note">Note <span class="muted">(optional)</span></label>
+          <input id="note" maxlength="140" placeholder="Lunch">
+        </div>
+        <div class="field">
+          <label for="simulate">Simulate failure at <span class="muted">(testing)</span></label>
+          <select id="simulate">
+            <option value="">— none, run normally —</option>
+            <option>VALIDATE</option><option>CHECK_SENDER</option><option>CHECK_RECEIVER</option>
+            <option>CHECK_LIMIT</option><option>CHECK_FUNDS</option><option>DEBIT_SENDER</option>
+            <option value="CREDIT_RECEIVER">CREDIT_RECEIVER (money gets returned)</option>
+          </select>
+        </div>
+        <button class="primary" type="submit" id="sendBtn">Send</button>
+        <div class="muted" id="formError" style="margin-top:8px;color:var(--err)"></div>
+      </form>
+
+      <section class="panel">
+        <h2>Transfer detail</h2>
+        <div id="detail"><div class="empty">Send money or click a transaction to see each step.</div></div>
+      </section>
+    </div>
+
+    <section class="panel" id="receiverPanel">
+      <div class="user-head">
+        <span class="role">User 2 · receiver</span>
+        <span id="receiverStatus"></span>
+      </div>
+      <div class="field" style="margin-top:10px">
+        <select id="receiver" aria-label="Receiver"></select>
+      </div>
+      <div class="balance" id="receiverBalance">—</div>
+      <div class="muted" id="receiverId"></div>
+      <h3>Activity</h3>
+      <div id="receiverTx"></div>
+    </section>
+  </div>
+</div>
+
+<script>
+  const BASE = location.origin;
+  const $ = (id) => document.getElementById(id);
+  $('apiBase').textContent = BASE;
+
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+  let accounts = [];
+  let selectedTransferId = null;
+
+  async function api(method, path, body) {
+    const res = await fetch(BASE + path, {
+      method,
+      headers: body !== undefined ? { 'Content-Type': 'application/json' } : undefined,
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+    });
+    const text = await res.text();
+    let data; try { data = text ? JSON.parse(text) : null; } catch { data = text; }
+    return { ok: res.ok, status: res.status, data };
+  }
+
+  const nameOf = (id) => accounts.find((a) => a.id === id)?.name ?? id;
+
+  function money(amount, currency) {
+    if (!currency) return String(amount);
+    try { return new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(amount); }
+    catch { return amount + ' ' + currency; }
+  }
+
+  // What this transfer means from one user's point of view.
+  function outcomeFor(t, accountId) {
+    const sent = t.fromAccountId === accountId;
+    if (t.status === 'COMPLETED') {
+      return sent
+        ? { cls: 'ok', label: 'Sent · delivered', sign: '−' }
+        : { cls: 'ok', label: 'Received', sign: '+' };
+    }
+    if (t.status === 'REVERSED') {
+      return sent
+        ? { cls: 'warn', label: 'Not delivered · refunded', sign: '' }
+        : { cls: 'err', label: 'Not received', sign: '' };
+    }
+    if (t.status === 'FAILED') {
+      return sent
+        ? { cls: 'err', label: 'Failed · not charged', sign: '' }
+        : { cls: 'err', label: 'Not received', sign: '' };
+    }
+    return { cls: 'info', label: t.status, sign: '' };
+  }
+
+  function renderAccountOptions() {
+    const opts = accounts.map((a) =>
+      `<option value="${esc(a.id)}">${esc(a.name)} — ${esc(a.currency)}</option>`).join('');
+    const s = $('sender').value || 'user-1';
+    const r = $('receiver').value || 'user-2';
+    $('sender').innerHTML = opts; $('receiver').innerHTML = opts;
+    $('sender').value = s; $('receiver').value = r;
+  }
+
+  async function renderSide(side) {
+    const id = $(side).value;
+    const acct = accounts.find((a) => a.id === id);
+    if (!acct) return;
+    $(side + 'Balance').textContent = money(acct.balance, acct.currency);
+    $(side + 'Id').innerHTML = `<span class="mono">${esc(acct.id)}</span>`;
+    $(side + 'Status').innerHTML =
+      `<span class="badge ${acct.status === 'ACTIVE' ? 'ok' : 'err'}">${esc(acct.status)}</span>`;
+
+    const { data } = await api('GET', `/transfers?accountId=${encodeURIComponent(id)}`);
+    const list = Array.isArray(data) ? data : [];
+    list.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    $(side + 'Tx').innerHTML = list.length ? list.map((t) => {
+      const o = outcomeFor(t, id);
+      const sent = t.fromAccountId === id;
+      const other = sent ? nameOf(t.toAccountId) : nameOf(t.fromAccountId);
+      const reason = t.failure
+        ? `<div class="tx-reason">Failed at ${esc(t.failure.step)} · ${esc(t.failure.code)}</div>` : '';
+      return `<div class="tx ${t.id === selectedTransferId ? 'selected' : ''}" data-id="${esc(t.id)}">
+        <div class="tx-line">
+          <span>${sent ? 'To' : 'From'} <strong>${esc(other)}</strong></span>
+          <span class="tx-amt">${o.sign}${esc(money(t.amount, t.currency))}</span>
+        </div>
+        <div class="tx-line" style="margin-top:4px">
+          <span class="badge ${o.cls}">${esc(o.label)}</span>
+          <span class="muted" style="font-size:12px">${new Date(t.createdAt).toLocaleTimeString()}</span>
+        </div>
+        ${t.note ? `<div class="tx-sub">“${esc(t.note)}”</div>` : ''}
+        ${reason}
+      </div>`;
+    }).join('') : '<div class="empty">No transfers yet.</div>';
+  }
+
+  function stepIcon(status) {
+    if (status === 'OK') return '<span class="dot ok">✓</span>';
+    if (status === 'FAILED') return '<span class="dot err">✕</span>';
+    return '<span class="dot info">–</span>';
+  }
+
+  function renderDetail(t) {
+    selectedTransferId = t.id;
+    const from = nameOf(t.fromAccountId), to = nameOf(t.toAccountId);
+    let callout;
+    if (t.status === 'COMPLETED') {
+      callout = `<div class="callout ok">${esc(to)} received ${esc(money(t.amount, t.currency))} from ${esc(from)}.</div>`;
+    } else if (t.status === 'REVERSED') {
+      callout = `<div class="callout warn">${esc(to)} did <strong>not</strong> receive the money. It failed at
+        <span class="mono">${esc(t.failure.step)}</span> after ${esc(from)} was debited, so the
+        ${esc(money(t.amount, t.currency))} was returned to ${esc(from)}.<br><strong>${esc(t.failure.code)}</strong>: ${esc(t.failure.message)}</div>`;
+    } else if (t.status === 'FAILED') {
+      callout = `<div class="callout err">${esc(to)} did <strong>not</strong> receive the money. It failed at
+        <span class="mono">${esc(t.failure.step)}</span>; ${esc(from)} was not charged.<br>
+        <strong>${esc(t.failure.code)}</strong>: ${esc(t.failure.message)}</div>`;
+    } else {
+      callout = `<div class="callout info">${esc(t.status)}</div>`;
+    }
+    $('detail').innerHTML = `
+      <div class="result-head">
+        <span><strong>${esc(from)}</strong> → <strong>${esc(to)}</strong></span>
+        <span class="badge ${{ COMPLETED: 'ok', REVERSED: 'warn', FAILED: 'err' }[t.status] || 'info'}">${esc(t.status)}</span>
+      </div>
+      ${callout}
+      <ul class="steps">${t.steps.map((s) => `
+        <li class="${esc(s.status)}">${stepIcon(s.status)}
+          <div><div class="name">${esc(s.step)}</div><div class="msg">${esc(s.message)}</div></div>
+        </li>`).join('')}</ul>
+      <div class="muted mono" style="margin-top:10px">${esc(t.id)}</div>`;
+  }
+
+  async function refresh() {
+    const { data } = await api('GET', '/accounts');
+    accounts = Array.isArray(data) ? data : [];
+    renderAccountOptions();
+    await Promise.all([renderSide('sender'), renderSide('receiver')]);
+  }
+
+  $('sendForm').onsubmit = async (e) => {
+    e.preventDefault();
+    $('formError').textContent = '';
+    const body = {
+      fromAccountId: $('sender').value,
+      toAccountId: $('receiver').value,
+      amount: Number($('amount').value),
+    };
+    if ($('note').value.trim()) body.note = $('note').value.trim();
+    if ($('simulate').value) body.simulateFailureAt = $('simulate').value;
+
+    $('sendBtn').disabled = true;
+    const { ok, data } = await api('POST', '/transfers', body);
+    $('sendBtn').disabled = false;
+
+    if (!ok) {
+      // Request was rejected before a transfer was even attempted (bad input).
+      const msg = Array.isArray(data?.message) ? data.message.join('; ') : (data?.message || 'Request failed');
+      $('formError').textContent = msg;
+      return;
+    }
+    renderDetail(data);
+    refresh();
+  };
+
+  for (const side of ['senderTx', 'receiverTx']) {
+    $(side).onclick = async (e) => {
+      const el = e.target.closest('.tx');
+      if (!el) return;
+      const { ok, data } = await api('GET', `/transfers/${encodeURIComponent(el.dataset.id)}`);
+      if (ok) { renderDetail(data); refresh(); }
+    };
+  }
+
+  $('sender').onchange = () => renderSide('sender');
+  $('receiver').onchange = () => renderSide('receiver');
+
+  refresh();
+</script>
+</body>
+</html>

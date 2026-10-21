@@ -12,6 +12,8 @@ const config_1 = require("@nestjs/config");
 const app_controller_1 = require("./app.controller");
 const app_service_1 = require("./app.service");
 const payment_module_1 = require("./payment/payment.module");
+const account_module_1 = require("./account/account.module");
+const transfer_module_1 = require("./transfer/transfer.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -22,6 +24,8 @@ exports.AppModule = AppModule = __decorate([
                 isGlobal: true,
             }),
             payment_module_1.PaymentModule,
+            account_module_1.AccountModule,
+            transfer_module_1.TransferModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [app_service_1.AppService],
