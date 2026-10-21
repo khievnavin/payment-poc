@@ -1,0 +1,58 @@
+### Payment service: test requests
+# Open in VS Code with the "REST Client" extension (or IntelliJ / DataGrip's HTTP client)
+# and click "Send Request" above a request. Run the service first: npm run dev
+# Payments are kept in PostgreSQL (docker compose service "db", 127.0.0.1:5436).
+
+@base = http://localhost:3001
+
+### List all payments
+GET {{base}}/payments
+
+### Look up one payment by its id (copy an "id" from the list, or a portal
+### application's transaction no.)
+GET {{base}}/payments/PUT-THE-ID-HERE
+
+### Look up the payments of an application by its number (order id)
+GET {{base}}/payments/order/TK-2026-0040
+
+### Charge online (what the portal does when a citizen pays online)
+POST {{base}}/payments
+Content-Type: application/json
+
+{
+  "orderId": "TEST-0001",
+  "amount": 10,
+  "currency": "USD",
+  "method": "online",
+  "payer": { "id": "k.navin", "name": "Khiev Navin" },
+  "payee": { "id": "TK", "name": "Takeo Provincial Administration", "department": "Takeo Online Services" },
+  "description": "Birth Certificate"
+}
+
+### Record a bank transfer / cash payment confirmed by Staff
+POST {{base}}/payments/record
+Content-Type: application/json
+
+{
+  "orderId": "TEST-0002",
+  "amount": 5,
+  "currency": "USD",
+  "method": "cash",
+  "reference": "R-0001",
+  "payer": { "id": "k.navin", "name": "Khiev Navin" },
+  "payee": { "id": "TK", "name": "Takeo Provincial Administration" },
+  "description": "Birth Certificate",
+  "confirmedBy": { "id": "takeo-dep1", "name": "takeo-staff" }
+}
+
+### Note who confirmed an online payment
+POST {{base}}/payments/PUT-THE-ID-HERE/confirm
+Content-Type: application/json
+
+{ "id": "takeo-dep1", "name": "takeo-staff" }
+
+### Refund
+POST {{base}}/payments/PUT-THE-ID-HERE/refund
+Content-Type: application/json
+
+{ "reason": "Testing" }

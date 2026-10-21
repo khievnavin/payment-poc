@@ -34,6 +34,9 @@ $ npm install
 ## Compile and run the project
 
 ```bash
+# one command: Redis in Docker + the service with live reload (http://localhost:3001)
+$ npm run dev
+
 # development
 $ npm run start
 

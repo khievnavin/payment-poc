@@ -18,6 +18,9 @@ const microservices_1 = require("@nestjs/microservices");
 const payment_service_1 = require("./payment.service");
 const create_payment_dto_1 = require("./dto/create-payment.dto");
 const refund_payment_dto_1 = require("./dto/refund-payment.dto");
+const record_payment_dto_1 = require("./dto/record-payment.dto");
+const confirm_payment_dto_1 = require("./dto/confirm-payment.dto");
+const create_payment_dto_2 = require("./dto/create-payment.dto");
 const payment_patterns_1 = require("./payment.patterns");
 let PaymentController = class PaymentController {
     paymentService;
@@ -27,11 +30,20 @@ let PaymentController = class PaymentController {
     createHttp(dto) {
         return this.paymentService.create(dto);
     }
+    recordHttp(dto) {
+        return this.paymentService.record(dto);
+    }
     findAllHttp() {
         return this.paymentService.findAll();
     }
+    findByOrderHttp(orderId) {
+        return this.paymentService.findByOrder(orderId);
+    }
     findOneHttp(id) {
         return this.paymentService.findOne(id);
+    }
+    confirmHttp(id, dto) {
+        return this.paymentService.confirm(id, dto);
     }
     refundHttp(id, dto) {
         return this.paymentService.refund(id, dto.reason);
@@ -39,11 +51,20 @@ let PaymentController = class PaymentController {
     create(dto) {
         return this.paymentService.create(dto);
     }
+    record(dto) {
+        return this.paymentService.record(dto);
+    }
+    confirm(dto) {
+        return this.paymentService.confirm(dto.id, dto.confirmedBy);
+    }
     findAll() {
         return this.paymentService.findAll();
     }
     findOne(data) {
         return this.paymentService.findOne(data.id);
+    }
+    findByOrder(data) {
+        return this.paymentService.findByOrder(data.orderId);
     }
     refund(data) {
         return this.paymentService.refund(data.id, data.reason);
@@ -58,11 +79,25 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], PaymentController.prototype, "createHttp", null);
 __decorate([
+    (0, common_1.Post)('record'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [record_payment_dto_1.RecordPaymentDto]),
+    __metadata("design:returntype", void 0)
+], PaymentController.prototype, "recordHttp", null);
+__decorate([
     (0, common_1.Get)(),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
 ], PaymentController.prototype, "findAllHttp", null);
+__decorate([
+    (0, common_1.Get)('order/:orderId'),
+    __param(0, (0, common_1.Param)('orderId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], PaymentController.prototype, "findByOrderHttp", null);
 __decorate([
     (0, common_1.Get)(':id'),
     __param(0, (0, common_1.Param)('id')),
@@ -70,6 +105,14 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
 ], PaymentController.prototype, "findOneHttp", null);
+__decorate([
+    (0, common_1.Post)(':id/confirm'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, create_payment_dto_2.PaymentPartyDto]),
+    __metadata("design:returntype", void 0)
+], PaymentController.prototype, "confirmHttp", null);
 __decorate([
     (0, common_1.Post)(':id/refund'),
     __param(0, (0, common_1.Param)('id')),
@@ -86,6 +129,20 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], PaymentController.prototype, "create", null);
 __decorate([
+    (0, microservices_1.MessagePattern)(payment_patterns_1.PaymentPatterns.RECORD),
+    __param(0, (0, microservices_1.Payload)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [record_payment_dto_1.RecordPaymentDto]),
+    __metadata("design:returntype", void 0)
+], PaymentController.prototype, "record", null);
+__decorate([
+    (0, microservices_1.MessagePattern)(payment_patterns_1.PaymentPatterns.CONFIRM),
+    __param(0, (0, microservices_1.Payload)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [confirm_payment_dto_1.ConfirmPaymentDto]),
+    __metadata("design:returntype", void 0)
+], PaymentController.prototype, "confirm", null);
+__decorate([
     (0, microservices_1.MessagePattern)(payment_patterns_1.PaymentPatterns.FIND_ALL),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
@@ -98,6 +155,13 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], PaymentController.prototype, "findOne", null);
+__decorate([
+    (0, microservices_1.MessagePattern)(payment_patterns_1.PaymentPatterns.FIND_BY_ORDER),
+    __param(0, (0, microservices_1.Payload)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], PaymentController.prototype, "findByOrder", null);
 __decorate([
     (0, microservices_1.MessagePattern)(payment_patterns_1.PaymentPatterns.REFUND),
     __param(0, (0, microservices_1.Payload)()),

@@ -1,4 +1,32 @@
-import { IsIn, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import { Type } from 'class-transformer';
+import {
+  IsIn,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  MaxLength,
+  Min,
+  ValidateNested,
+} from 'class-validator';
+
+/** Who pays or who receives (see PaymentParty). */
+export class PaymentPartyDto {
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(100)
+  id!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(200)
+  name!: string;
+
+  @IsString()
+  @IsOptional()
+  @MaxLength(200)
+  department?: string;
+}
 
 export class CreatePaymentDto {
   @IsString()
@@ -15,4 +43,28 @@ export class CreatePaymentDto {
   @IsString()
   @IsOptional()
   method?: string;
+
+  /** Who pays (e.g. the citizen). */
+  @ValidateNested()
+  @Type(() => PaymentPartyDto)
+  @IsOptional()
+  payer?: PaymentPartyDto;
+
+  /** Who receives the money (e.g. the province office). */
+  @ValidateNested()
+  @Type(() => PaymentPartyDto)
+  @IsOptional()
+  payee?: PaymentPartyDto;
+
+  /** What it is for (e.g. the service applied for). */
+  @IsString()
+  @IsOptional()
+  @MaxLength(200)
+  description?: string;
+
+  /** Bank the payer used (future bank / KHQR payments). */
+  @IsString()
+  @IsOptional()
+  @MaxLength(100)
+  bankName?: string;
 }

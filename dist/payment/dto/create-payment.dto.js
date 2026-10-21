@@ -9,13 +9,42 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.CreatePaymentDto = void 0;
+exports.CreatePaymentDto = exports.PaymentPartyDto = void 0;
+const class_transformer_1 = require("class-transformer");
 const class_validator_1 = require("class-validator");
+class PaymentPartyDto {
+    id;
+    name;
+    department;
+}
+exports.PaymentPartyDto = PaymentPartyDto;
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
+    (0, class_validator_1.MaxLength)(100),
+    __metadata("design:type", String)
+], PaymentPartyDto.prototype, "id", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
+    (0, class_validator_1.MaxLength)(200),
+    __metadata("design:type", String)
+], PaymentPartyDto.prototype, "name", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.MaxLength)(200),
+    __metadata("design:type", String)
+], PaymentPartyDto.prototype, "department", void 0);
 class CreatePaymentDto {
     orderId;
     amount;
     currency;
     method;
+    payer;
+    payee;
+    description;
+    bankName;
 }
 exports.CreatePaymentDto = CreatePaymentDto;
 __decorate([
@@ -37,4 +66,28 @@ __decorate([
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
 ], CreatePaymentDto.prototype, "method", void 0);
+__decorate([
+    (0, class_validator_1.ValidateNested)(),
+    (0, class_transformer_1.Type)(() => PaymentPartyDto),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", PaymentPartyDto)
+], CreatePaymentDto.prototype, "payer", void 0);
+__decorate([
+    (0, class_validator_1.ValidateNested)(),
+    (0, class_transformer_1.Type)(() => PaymentPartyDto),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", PaymentPartyDto)
+], CreatePaymentDto.prototype, "payee", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.MaxLength)(200),
+    __metadata("design:type", String)
+], CreatePaymentDto.prototype, "description", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.MaxLength)(100),
+    __metadata("design:type", String)
+], CreatePaymentDto.prototype, "bankName", void 0);
 //# sourceMappingURL=create-payment.dto.js.map

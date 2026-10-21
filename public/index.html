@@ -67,6 +67,10 @@
   .entry-head { display: flex; gap: 8px; align-items: center; font-family: var(--mono); font-size: 12px; }
   .code { font-weight: 700; }
   .code.ok { color: var(--ok); } .code.bad { color: var(--err); }
+  .tabs { display: flex; gap: 6px; margin-bottom: 10px; }
+  .tabs button[aria-pressed="true"] { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+  details summary { cursor: pointer; color: var(--muted); margin-top: 12px; }
+  td .sub { display: block; color: var(--muted); font-size: 12px; }
   pre { margin: 6px 0 0; padding: 10px; background: var(--bg); border-radius: 6px; overflow-x: auto;
     font: 12px/1.5 var(--mono); white-space: pre-wrap; word-break: break-word; }
 </style>
@@ -105,10 +109,23 @@
           <label for="method">Method <span class="muted">(optional, defaults to card)</span></label>
           <select id="method" name="method">
             <option value="">— omit —</option>
-            <option>card</option><option>bank_transfer</option><option>wallet</option><option>cash</option>
+            <option>online</option><option>card</option><option>bank_transfer</option><option>wallet</option><option>cash</option>
           </select>
         </div>
-        <button class="primary" type="submit" id="submitBtn">Create payment</button>
+        <details>
+          <summary>Sender, receiver, description (optional)</summary>
+          <div class="field row" style="margin-top:10px">
+            <div><label for="payerId">Sender ID</label><input id="payerId" placeholder="k.navin"></div>
+            <div><label for="payerName">Sender name</label><input id="payerName" placeholder="Khiev Navin"></div>
+          </div>
+          <div class="field row">
+            <div><label for="payeeId">Receiver ID</label><input id="payeeId" placeholder="TK"></div>
+            <div><label for="payeeName">Receiver name</label><input id="payeeName" placeholder="Takeo Provincial Administration"></div>
+          </div>
+          <div class="field"><label for="payeeDept">Receiver department</label><input id="payeeDept" placeholder="Takeo Online Services"></div>
+          <div class="field"><label for="description">Description</label><input id="description" placeholder="Birth Certificate"></div>
+        </details>
+        <button class="primary" type="submit" id="submitBtn">Create payment (charge)</button>
         <div class="presets" aria-label="Invalid input presets">
           <span class="muted" style="font-size:12px;align-self:center">Try invalid:</span>
           <button type="button" data-preset="zero">amount 0</button>
@@ -118,8 +135,29 @@
         </div>
       </form>
 
+      <form class="panel" id="recordForm" novalidate>
+        <h2>Record bank transfer / cash</h2>
+        <p class="muted" style="margin:-8px 0 12px">Money received outside this service, confirmed by an officer. Uses the order, amount, currency, sender and receiver above.</p>
+        <div class="field row">
+          <div>
+            <label for="recMethod">Method</label>
+            <select id="recMethod"><option>bank_transfer</option><option>cash</option></select>
+          </div>
+          <div><label for="recReference">Receipt no.</label><input id="recReference" placeholder="R-0001"></div>
+        </div>
+        <div class="field row">
+          <div><label for="confId">Confirmed by (username)</label><input id="confId" placeholder="takeo-dep1"></div>
+          <div><label for="confName">Confirmed by (name)</label><input id="confName" placeholder="takeo-staff"></div>
+        </div>
+        <button class="primary" type="submit" id="recordBtn">Record payment</button>
+      </form>
+
       <form class="panel" id="lookupForm">
-        <h2>Look up by ID</h2>
+        <h2>Look up</h2>
+        <div class="tabs" role="group" aria-label="Look up by">
+          <button type="button" class="small" data-mode="id" aria-pressed="true">By payment ID</button>
+          <button type="button" class="small" data-mode="order" aria-pressed="false">By order / application no.</button>
+        </div>
         <div class="row">
           <input id="lookupId" placeholder="payment id" class="mono">
           <button type="submit" style="flex:0 0 auto">Get</button>
@@ -135,7 +173,7 @@
         </div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>ID</th><th>Order</th><th style="text-align:right">Amount</th><th>Method</th><th>Status</th><th>Created</th><th></th></tr></thead>
+            <thead><tr><th>ID</th><th>Order</th><th>Sender</th><th>Receiver</th><th style="text-align:right">Amount</th><th>Method</th><th>Status</th><th>Confirmed by</th><th>Created</th><th></th></tr></thead>
             <tbody id="rows"></tbody>
           </table>
         </div>
@@ -202,22 +240,37 @@
     catch { return p.amount + ' ' + p.currency; }
   }
 
+  /** "Name" over "id · department", or a dash. */
+  function party(x) {
+    if (!x) return '<span class="muted">—</span>';
+    const sub = [x.id, x.department].filter(Boolean).map(esc).join(' · ');
+    return `${esc(x.name)}${sub ? `<span class="sub">${sub}</span>` : ''}`;
+  }
+  let lookupMode = 'id';
+  /** The payment(s) go to the Request log. */
+  function lookUp(mode, value) {
+    return call('GET', mode === 'id' ? `/${encodeURIComponent(value)}` : `/order/${encodeURIComponent(value)}`);
+  }
+
   function render(payments) {
     $('count').textContent = `(${payments.length})`;
     if (!payments.length) {
-      $('rows').innerHTML = '<tr><td colspan="7" class="empty">No payments yet. Create one on the left.</td></tr>';
+      $('rows').innerHTML = '<tr><td colspan="10" class="empty">No payments yet. Create one on the left.</td></tr>';
       return;
     }
     payments.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     $('rows').innerHTML = payments.map((p) => `
       <tr>
         <td><code class="id" title="${esc(p.id)} — click to look up" data-id="${esc(p.id)}">${esc(p.id.slice(0, 8))}…</code></td>
-        <td>${esc(p.orderId)}</td>
+        <td><span class="id" data-order="${esc(p.orderId)}" title="Look up this order">${esc(p.orderId)}</span></td>
+        <td>${party(p.payer)}</td>
+        <td>${party(p.payee)}</td>
         <td class="num">${esc(fmtAmount(p))}</td>
         <td>${esc(p.method)}</td>
         <td><span class="badge ${esc(p.status)}">${esc(p.status)}</span></td>
+        <td>${p.confirmedBy ? party(p.confirmedBy) : '<span class="badge PENDING">Waiting for confirmation</span>'}</td>
         <td class="muted">${new Date(p.createdAt).toLocaleTimeString()}</td>
-        <td><button class="small" data-refund="${esc(p.id)}">Refund</button></td>
+        <td><button class="small" data-refund="${esc(p.id)}" ${p.status === 'COMPLETED' ? '' : 'disabled'}>Refund</button></td>
       </tr>`).join('');
   }
 
@@ -234,9 +287,40 @@
       currency: $('currency').value,
     };
     if ($('method').value) body.method = $('method').value;
+    Object.assign(body, parties());
     $('submitBtn').disabled = true;
     const { ok } = await call('POST', '', body);
     $('submitBtn').disabled = false;
+    if (ok) { $('orderId').value = randomOrderId(); refresh(); }
+  };
+
+  /** Sender / receiver / description from the optional fields (only those filled in). */
+  function parties() {
+    const v = (id) => $(id).value.trim();
+    const out = {};
+    if (v('payerId') || v('payerName')) out.payer = { id: v('payerId'), name: v('payerName') };
+    if (v('payeeId') || v('payeeName')) {
+      out.payee = { id: v('payeeId'), name: v('payeeName') };
+      if (v('payeeDept')) out.payee.department = v('payeeDept');
+    }
+    if (v('description')) out.description = v('description');
+    return out;
+  }
+
+  $('recordForm').onsubmit = async (e) => {
+    e.preventDefault();
+    const body = {
+      orderId: $('orderId').value,
+      amount: Number($('amount').value),
+      currency: $('currency').value,
+      method: $('recMethod').value,
+      reference: $('recReference').value.trim(),
+      confirmedBy: { id: $('confId').value.trim(), name: $('confName').value.trim() },
+      ...parties(),
+    };
+    $('recordBtn').disabled = true;
+    const { ok } = await call('POST', '/record', body);
+    $('recordBtn').disabled = false;
     if (ok) { $('orderId').value = randomOrderId(); refresh(); }
   };
 
@@ -250,22 +334,35 @@
     b.onclick = () => call('POST', '', presets[b.dataset.preset]);
   });
 
-  $('rows').onclick = async (e) => {
-    const refundId = e.target.dataset.refund;
-    const lookupId = e.target.dataset.id;
-    if (refundId) {
-      await call('POST', `/${encodeURIComponent(refundId)}/refund`, { reason: 'Test refund from UI' });
+  function setMode(mode) {
+    lookupMode = mode;
+    document.querySelectorAll('[data-mode]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.mode === mode)));
+    $('lookupId').placeholder = mode === 'id' ? 'payment id' : 'order id, e.g. TK-2026-0040';
+  }
+  document.querySelectorAll('[data-mode]').forEach((b) => { b.onclick = () => setMode(b.dataset.mode); });
+
+  /** Table: look up an id / order (into the Request log), refund. */
+  async function onAction(e) {
+    const t = e.target;
+    if (t.dataset.refund) {
+      await call('POST', `/${encodeURIComponent(t.dataset.refund)}/refund`, { reason: 'Test refund from UI' });
       refresh();
-    } else if (lookupId) {
-      $('lookupId').value = lookupId;
-      call('GET', `/${encodeURIComponent(lookupId)}`);
+    } else if (t.dataset.id) {
+      setMode('id');
+      $('lookupId').value = t.dataset.id;
+      return lookUp('id', t.dataset.id);
+    } else if (t.dataset.order) {
+      setMode('order');
+      $('lookupId').value = t.dataset.order;
+      return lookUp('order', t.dataset.order);
     }
-  };
+  }
+  $('rows').onclick = onAction;
 
   $('lookupForm').onsubmit = (e) => {
     e.preventDefault();
-    const id = $('lookupId').value.trim();
-    if (id) call('GET', `/${encodeURIComponent(id)}`);
+    const value = $('lookupId').value.trim();
+    if (value) lookUp(lookupMode, value);
   };
 
   $('refresh').onclick = refresh;

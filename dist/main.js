@@ -17,9 +17,9 @@ async function bootstrap() {
             host: config.get('REDIS_HOST', 'localhost'),
             port: config.get('REDIS_PORT', 6379),
         },
-    });
+    }, { inheritAppConfig: true });
     await app.startAllMicroservices();
-    const httpPort = config.get('PORT', 3000);
+    const httpPort = config.get('PORT', 3001);
     await app.listen(httpPort);
     console.log(`Payment service HTTP listening on port ${httpPort}`);
     console.log(`Payment service microservice (Redis) connected at ${config.get('REDIS_HOST', 'localhost')}:${config.get('REDIS_PORT', 6379)}`);
