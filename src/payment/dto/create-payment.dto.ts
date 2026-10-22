@@ -62,7 +62,13 @@ export class CreatePaymentDto {
   @MaxLength(200)
   description?: string;
 
-  /** Bank the payer used (future bank / KHQR payments). */
+  /** Transaction reference; the service makes a UUID when it is left out. */
+  @IsString()
+  @IsOptional()
+  @MaxLength(100)
+  reference?: string;
+
+  /** The receiving bank, e.g. the office's bank from its website (ACLEDA, ABA…). */
   @IsString()
   @IsOptional()
   @MaxLength(100)

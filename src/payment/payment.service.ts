@@ -33,7 +33,8 @@ export function describePayment(p: Payment): string {
     `  sender:       ${party(p.payer)}`,
     `  receiver:     ${party(p.payee)}`,
     ...(p.description ? [`  description:  ${p.description}`] : []),
-    ...(p.reference ? [`  receipt no.:  ${p.reference}`] : []),
+    ...(p.bankName ? [`  bank:         ${p.bankName}`] : []),
+    ...(p.reference ? [`  reference:    ${p.reference}`] : []),
     p.confirmedBy
       ? `  confirmed by: ${party(p.confirmedBy)}${p.confirmedAt ? ` at ${new Date(p.confirmedAt).toISOString()}` : ''}`
       : `  confirmed by: waiting for confirmation`,
@@ -64,6 +65,7 @@ export class PaymentService {
       payee: dto.payee,
       description: dto.description,
       bankName: dto.bankName ?? null,
+      reference: dto.reference ?? randomUUID(),
       createdAt: now,
       updatedAt: now,
     };

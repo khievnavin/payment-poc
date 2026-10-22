@@ -44,6 +44,7 @@ class CreatePaymentDto {
     payer;
     payee;
     description;
+    reference;
     bankName;
 }
 exports.CreatePaymentDto = CreatePaymentDto;
@@ -84,6 +85,12 @@ __decorate([
     (0, class_validator_1.MaxLength)(200),
     __metadata("design:type", String)
 ], CreatePaymentDto.prototype, "description", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.MaxLength)(100),
+    __metadata("design:type", String)
+], CreatePaymentDto.prototype, "reference", void 0);
 __decorate([
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsOptional)(),

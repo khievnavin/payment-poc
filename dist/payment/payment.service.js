@@ -33,7 +33,8 @@ function describePayment(p) {
         `  sender:       ${party(p.payer)}`,
         `  receiver:     ${party(p.payee)}`,
         ...(p.description ? [`  description:  ${p.description}`] : []),
-        ...(p.reference ? [`  receipt no.:  ${p.reference}`] : []),
+        ...(p.bankName ? [`  bank:         ${p.bankName}`] : []),
+        ...(p.reference ? [`  reference:    ${p.reference}`] : []),
         p.confirmedBy
             ? `  confirmed by: ${party(p.confirmedBy)}${p.confirmedAt ? ` at ${new Date(p.confirmedAt).toISOString()}` : ''}`
             : `  confirmed by: waiting for confirmation`,
@@ -61,6 +62,7 @@ let PaymentService = PaymentService_1 = class PaymentService {
             payee: dto.payee,
             description: dto.description,
             bankName: dto.bankName ?? null,
+            reference: dto.reference ?? (0, crypto_1.randomUUID)(),
             createdAt: now,
             updatedAt: now,
         };

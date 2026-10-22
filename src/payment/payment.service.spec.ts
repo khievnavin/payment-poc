@@ -62,6 +62,8 @@ describe('PaymentService', () => {
       confirmationStatus: ConfirmationStatus.WAITING_CONFIRMATION,
       confirmedBy: null, // nobody confirmed it yet
     });
+    // A transaction reference is made when none is given.
+    expect(found.reference).toMatch(/^[0-9a-f-]{36}$/);
   });
 
   it('answers 404 for an unknown id', async () => {

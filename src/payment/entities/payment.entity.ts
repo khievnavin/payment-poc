@@ -69,11 +69,11 @@ export class Payment {
   @Column({ type: 'varchar', nullable: true })
   description?: string;
 
-  /** Bank the payer used (bank / KHQR payments); null for card / online. */
+  /** The receiving bank (e.g. the province's bank from its website); null if not given. */
   @Column({ type: 'varchar', nullable: true })
   bankName?: string | null;
 
-  /** Bank transaction or receipt number (payments recorded by an officer). */
+  /** Transaction reference: a UUID made by this service, or the receipt number an officer recorded. */
   @Column({ type: 'varchar', nullable: true })
   reference?: string;
 

@@ -264,7 +264,7 @@
         <td><code class="id" title="${esc(p.id)} — click to look up" data-id="${esc(p.id)}">${esc(p.id.slice(0, 8))}…</code></td>
         <td><span class="id" data-order="${esc(p.orderId)}" title="Look up this order">${esc(p.orderId)}</span></td>
         <td>${party(p.payer)}</td>
-        <td>${party(p.payee)}</td>
+        <td>${party(p.payee)}${p.bankName ? `<span class="sub">Bank: ${esc(p.bankName)}</span>` : ''}</td>
         <td class="num">${esc(fmtAmount(p))}</td>
         <td>${esc(p.method)}</td>
         <td><span class="badge ${esc(p.status)}">${esc(p.status)}</span></td>

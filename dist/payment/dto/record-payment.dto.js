@@ -15,7 +15,7 @@ const class_validator_1 = require("class-validator");
 const create_payment_dto_1 = require("./create-payment.dto");
 class RecordPaymentDto extends create_payment_dto_1.CreatePaymentDto {
     method = '';
-    reference;
+    reference = '';
     confirmedBy;
 }
 exports.RecordPaymentDto = RecordPaymentDto;
@@ -28,7 +28,7 @@ __decorate([
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsNotEmpty)(),
     (0, class_validator_1.MaxLength)(100),
-    __metadata("design:type", String)
+    __metadata("design:type", Object)
 ], RecordPaymentDto.prototype, "reference", void 0);
 __decorate([
     (0, class_validator_1.ValidateNested)(),

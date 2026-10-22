@@ -18,11 +18,11 @@ export class RecordPaymentDto extends CreatePaymentDto {
   @IsIn(['bank_transfer', 'cash'])
   override method = '';
 
-  /** Bank transaction or receipt number. */
+  /** Bank transaction or receipt number: required here (the empty default fails the check). */
   @IsString()
   @IsNotEmpty()
   @MaxLength(100)
-  reference!: string;
+  override reference = '';
 
   /** The officer who confirmed it. */
   @ValidateNested()

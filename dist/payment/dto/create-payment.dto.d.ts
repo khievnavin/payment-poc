@@ -11,5 +11,6 @@ export declare class CreatePaymentDto {
     payer?: PaymentPartyDto;
     payee?: PaymentPartyDto;
     description?: string;
+    reference?: string;
     bankName?: string;
 }
